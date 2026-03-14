@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIGIXPERTE Admin — Back-Office</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   RESET & TOKENS
+═══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0b0f;--bg2:#111218;--bg3:#16181f;--bg4:#1c1e27;
+  --border:#ffffff0d;--border2:#ffffff18;
+  --blue:#6366f1;--blue2:#818cf8;--blue3:#c7d2fe;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--purple:#a855f7;--cyan:#06b6d4;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --r:12px;--rs:8px;
+  --sh:0 4px 24px rgba(0,0,0,.4);
+  --tr:all .2s cubic-bezier(.4,0,.2,1);
+  --font:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+
+/* ═══════════════════════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════════════════════ */
+#loginScreen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;
+}
+.login-box{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:20px;padding:44px 40px;width:100%;max-width:400px;
+  box-shadow:0 24px 64px rgba(0,0,0,.6);
+}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;justify-content:center}
+.login-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center}
+.login-logo span{font-family:var(--font);font-size:18px;font-weight:800;color:var(--text)}
+.login-box h2{font-family:var(--font);font-size:22px;font-weight:700;margin-bottom:6px;text-align:center}
+.login-box p{color:var(--text2);font-size:13px;text-align:center;margin-bottom:28px}
+.lf{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.lf label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.7px}
+.lf input{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:11px 14px;font-size:14px;color:var(--text);outline:none;transition:var(--tr)}
+.lf input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--purple));border:none;border-radius:var(--rs);padding:13px;font-size:15px;font-weight:700;font-family:var(--font);color:#fff;margin-top:8px;transition:var(--tr)}
+.login-btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,.3)}
+.login-error{color:var(--red);font-size:12px;text-align:center;margin-top:10px;display:none}
+
+/* ═══════════════════════════════════════════════
+   APP LAYOUT
+═══════════════════════════════════════════════ */
+#app{display:none;height:100%;flex-direction:row}
+#app.visible{display:flex}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:240px;min-width:240px;background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;height:100%;overflow:hidden;
+  transition:width .25s ease;
+}
+.sidebar.collapsed{width:64px;min-width:64px}
+.sb-header{padding:20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);height:64px}
+.sb-logo-icon{width:32px;height:32px;min-width:32px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-text{font-family:var(--font);font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;transition:opacity .2s}
+.sidebar.collapsed .sb-logo-text{opacity:0;width:0}
+.sb-toggle{margin-left:auto;background:none;border:none;color:var(--text2);padding:4px;flex-shrink:0;transition:var(--tr)}
+.sb-toggle:hover{color:var(--text)}
+.sidebar.collapsed .sb-toggle{margin-left:0}
+.sb-nav{flex:1;overflow-y:auto;padding:12px 8px;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-group{margin-bottom:4px}
+.sb-group-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px;white-space:nowrap;overflow:hidden;transition:opacity .2s}
+.sidebar.collapsed .sb-group-label{opacity:0}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--rs);cursor:pointer;color:var(--text2);transition:var(--tr);position:relative;border:none;background:none;width:100%;text-align:left;white-space:nowrap}
+.sb-item:hover{background:var(--bg3);color:var(--text)}
+.sb-item.active{background:rgba(99,102,241,.15);color:var(--blue2)}
+.sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:70%;background:var(--blue);border-radius:0 3px 3px 0}
+.sb-item-icon{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.sb-item-label{font-size:13px;font-weight:500;overflow:hidden;transition:opacity .2s,width .2s}
+.sidebar.collapsed .sb-item-label{opacity:0;width:0}
+.sb-badge{margin-left:auto;background:var(--blue);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;flex-shrink:0;transition:opacity .2s}
+.sidebar.collapsed .sb-badge{opacity:0}
+.sb-footer{padding:12px 8px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;transition:var(--tr)}
+.sb-user:hover{background:var(--bg3)}
+.sb-avatar{width:32px;height:32px;min-width:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+.sb-user-info{overflow:hidden;transition:opacity .2s}
+.sidebar.collapsed .sb-user-info{opacity:0;width:0}
+.sb-user-name{font-size:13px;font-weight:600;white-space:nowrap}
+.sb-user-role{font-size:11px;color:var(--text2);white-space:nowrap}
+
+/* ── MAIN AREA ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:64px;min-height:64px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px}
+.topbar-title{font-family:var(--font);font-size:18px;font-weight:700;flex:1}
+.topbar-search{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:8px 14px;min-width:220px}
+.topbar-search input{background:none;border:none;outline:none;color:var(--text);font-size:13px;width:100%}
+.topbar-search input::placeholder{color:var(--text3)}
+.tb-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:8px 10px;color:var(--text2);display:flex;align-items:center;gap:6px;font-size:13px;transition:var(--tr)}
+.tb-btn:hover{border-color:var(--border2);color:var(--text);background:var(--bg4)}
+.tb-notif{position:relative}
+.tb-notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--bg2)}
+.content{flex:1;overflow-y:auto;padding:24px;scrollbar-width:thin;scrollbar-color:var(--bg4) transparent}
+.content::-webkit-scrollbar{width:6px}
+.content::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* ═══════════════════════════════════════════════
+   VIEWS (pages)
+═══════════════════════════════════════════════ */
+.view{display:none}
+.view.active{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════════════════
+   COMPONENTS
+═══════════════════════════════════════════════ */
+/* Stat cards */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;transition:var(--tr)}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.stat-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.stat-badge.up{background:rgba(16,185,129,.12);color:var(--green)}
+.stat-badge.down{background:rgba(239,68,68,.12);color:var(--red)}
+.stat-badge.neu{background:rgba(99,102,241,.12);color:var(--blue2)}
+.stat-val{font-family:var(--font);font-size:28px;font-weight:800;line-height:1;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--text2)}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:6px}
+
+/* Tables */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.table-header h3{font-family:var(--font);font-size:15px;font-weight:700}
+.table-actions{display:flex;gap:8px;align-items:center}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.td-name{font-weight:600;color:var(--text)}
+.td-sub{font-size:11px;color:var(--text3)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(16,185,129,.12);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.12);color:var(--red)}
+.badge-amber{background:rgba(245,158,11,.12);color:var(--amber)}
+.badge-blue{background:rgba(99,102,241,.12);color:var(--blue2)}
+.badge-purple{background:rgba(168,85,247,.12);color:var(--purple)}
+.badge-gray{background:rgba(148,163,184,.1);color:var(--text2)}
+.badge-cyan{background:rgba(6,182,212,.12);color:var(--cyan)}
+.badge-dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:2px}
+
+/* Buttons */
+.btn-pri{background:linear-gradient(135deg,var(--blue),var(--purple));border:none;border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:600;font-family:var(--font);color:#fff;display:inline-flex;align-items:center;gap:6px;transition:var(--tr)}
+.btn-pri:hover{opacity:.9;transform:translateY(-1px)}
+.btn-sec{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:8px 14px;font-size:13px;font-weight:500;color:var(--text2);display:inline-flex;align-items:center;gap:6px;transition:var(--tr)}
+.btn-sec:hover{color:var(--text);border-color:var(--border2);background:var(--bg4)}
+.btn-ghost{background:none;border:none;color:var(--text2);padding:6px;border-radius:var(--rs);display:inline-flex;align-items:center;gap:4px;transition:var(--tr);font-size:12px}
+.btn-ghost:hover{color:var(--text);background:var(--bg3)}
+.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:var(--rs);padding:7px 12px;font-size:12px;font-weight:600;color:var(--red);display:inline-flex;align-items:center;gap:5px;transition:var(--tr)}
+.btn-danger:hover{background:rgba(239,68,68,.18)}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.card-title{font-family:var(--font);font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.card-title span{font-family:var(--font-body);font-size:11px;font-weight:400;color:var(--text3)}
+
+/* Grid helpers */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-12{display:grid;grid-template-columns:1fr 2fr;gap:16px}
+.grid-21{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+
+/* Mini charts placeholder */
+.sparkline{height:36px;display:flex;align-items:flex-end;gap:2px}
+.spark-bar{background:var(--blue);border-radius:2px 2px 0 0;flex:1;min-width:4px;opacity:.7;transition:opacity .2s}
+.spark-bar:hover{opacity:1}
+.spark-bar.green{background:var(--green)}
+.spark-bar.amber{background:var(--amber)}
+
+/* Progress bars */
+.progress{background:var(--bg3);border-radius:4px;height:6px;overflow:hidden}
+.progress-bar{height:100%;border-radius:4px;transition:width .5s ease}
+
+/* Avatar */
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.avatar-sm{width:24px;height:24px;font-size:10px}
+
+/* Toggle switch */
+.toggle{position:relative;width:36px;height:20px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--bg4);border-radius:20px;cursor:pointer;transition:.2s}
+.toggle-slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--green)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(16px)}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;background:var(--bg3);padding:4px;border-radius:var(--rs);margin-bottom:20px;width:fit-content}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;background:none;border:none;transition:var(--tr);white-space:nowrap}
+.tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* Timeline */
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:14px;padding-bottom:16px;position:relative}
+.tl-item::before{content:'';position:absolute;left:15px;top:28px;bottom:0;width:1px;background:var(--border)}
+.tl-item:last-child::before{display:none}
+.tl-dot{width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.tl-body{flex:1;padding-top:3px}
+.tl-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.tl-time{font-size:11px;color:var(--text3)}
+.tl-desc{font-size:12px;color:var(--text2);margin-top:4px;line-height:1.5}
+
+/* Form elements inside admin */
+.af{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.af label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.7px}
+.af input,.af select,.af textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:9px 12px;font-size:13px;color:var(--text);outline:none;transition:var(--tr);font-family:inherit}
+.af input:focus,.af select:focus,.af textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.af select option{background:var(--bg2)}
+.af textarea{resize:vertical;min-height:80px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:1}
+.modal-header h3{font-family:var(--font);font-size:16px;font-weight:700}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+
+/* Notif toast */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9998;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:var(--sh);animation:slideIn .25s ease;min-width:240px}
+.toast.success{border-color:rgba(16,185,129,.3)}
+.toast.error{border-color:rgba(239,68,68,.3)}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideOut{to{opacity:0;transform:translateY(12px)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* Misc */
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty-state svg{margin:0 auto 12px;display:block;opacity:.3}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text2)}
+.section-title{font-family:var(--font);font-size:22px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.section-title span{font-family:var(--font-body);font-size:12px;font-weight:400;color:var(--text3)}
+
+/* Scrollable table */
+.table-scroll{overflow-x:auto}
+
+/* Realtime dot */
+.rt-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse-dot 1.5s infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+
+/* Rating stars */
+.stars{color:var(--amber);letter-spacing:1px;font-size:13px}
+
+/* Kanban */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
+.kanban-col{background:var(--bg3);border-radius:var(--r);padding:14px}
+.kanban-col-header{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.kanban-count{background:var(--bg4);border-radius:10px;padding:1px 7px;font-size:11px;color:var(--text3)}
+.kcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:12px;margin-bottom:8px;cursor:pointer;transition:var(--tr)}
+.kcard:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--sh)}
+.kcard-title{font-size:13px;font-weight:600;margin-bottom:6px}
+.kcard-meta{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px}
+
+/* Chart container */
+.chart-container{position:relative;height:220px}
+
+/* Notification items */
+.notif-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.notif-item:last-child{border-bottom:none}
+.notif-body{flex:1}
+.notif-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.notif-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.notif-time{font-size:11px;color:var(--text3);margin-top:3px}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px}
+
+@media(max-width:1100px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:1fr 1fr}
+  .kanban{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head><body>
+<!-- ═══════════════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon"><i data-lucide="zap" style="width:18px;height:18px;stroke:#fff;fill:none"></i></div>
+      <span>DIGIXPERTE</span>
+    </div>
+    <h2>Back-Office Admin</h2>
+    <p>Connectez-vous pour accéder au tableau de bord</p>
+    <div class="lf"><label>Identifiant</label><input type="text" id="loginUser" value="admin" placeholder="admin"></div>
+    <div class="lf"><label>Mot de passe</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+    <button class="login-btn" onclick="doLogin()">Se connecter</button>
+    <div class="login-error" id="loginError">Identifiants incorrects</div>
+    <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--text3)">Démo : admin / digixperte2025</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     APP
+═══════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo-icon"><i data-lucide="zap" style="width:16px;height:16px;stroke:#fff;fill:none"></i></div>
+      <span class="sb-logo-text">DIGIXPERTE</span>
+      <button class="sb-toggle" onclick="toggleSidebar()"><i data-lucide="panel-left-close" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></button>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-group">
+        <div class="sb-group-label">Vue générale</div>
+        <button class="sb-item active" onclick="nav('dashboard')">
+          <span class="sb-item-icon"><i data-lucide="layout-dashboard" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Tableau de bord</span>
+        </button>
+        <button class="sb-item" onclick="nav('analytics')">
+          <span class="sb-item-icon"><i data-lucide="bar-chart-2" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Analytique temps réel</span>
+          <span class="sb-badge rt-dot" style="background:none;padding:0;width:8px;height:8px;border-radius:50%;background:var(--green)"></span>
+        </button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">CRM</div>
+        <button class="sb-item" onclick="nav('leads')">
+          <span class="sb-item-icon"><i data-lucide="user-plus" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Leads</span>
+          <span class="sb-badge" id="badge-leads">12</span>
+        </button>
+        <button class="sb-item" onclick="nav('clients')">
+          <span class="sb-item-icon"><i data-lucide="users" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Clients</span>
+        </button>
+        <button class="sb-item" onclick="nav('contacts')">
+          <span class="sb-item-icon"><i data-lucide="message-square" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Prises de contact</span>
+          <span class="sb-badge" id="badge-contacts">5</span>
+        </button>
+        <button class="sb-item" onclick="nav('devis')">
+          <span class="sb-item-icon"><i data-lucide="file-text" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Devis</span>
+        </button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Audits</div>
+        <button class="sb-item" onclick="nav('audits')">
+          <span class="sb-item-icon"><i data-lucide="search" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Demandes d'audit</span>
+          <span class="sb-badge" id="badge-audits">3</span>
+        </button>
+        <button class="sb-item" onclick="nav('livraisons')">
+          <span class="sb-item-icon"><i data-lucide="send" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Livraisons</span>
+        </button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Marketing</div>
+        <button class="sb-item" onclick="nav('newsletter')">
+          <span class="sb-item-icon"><i data-lucide="mail" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Newsletter</span>
+        </button>
+        <button class="sb-item" onclick="nav('ressources')">
+          <span class="sb-item-icon"><i data-lucide="download" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Lead Magnets</span>
+        </button>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Administration</div>
+        <button class="sb-item" onclick="nav('moderation')">
+          <span class="sb-item-icon"><i data-lucide="shield" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Modération</span>
+          <span class="sb-badge" id="badge-mod">2</span>
+        </button>
+        <button class="sb-item" onclick="nav('notifications')">
+          <span class="sb-item-icon"><i data-lucide="bell" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Notifications</span>
+          <span class="sb-badge" id="badge-notif">7</span>
+        </button>
+        <button class="sb-item" onclick="nav('parametres')">
+          <span class="sb-item-icon"><i data-lucide="settings" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></span>
+          <span class="sb-item-label">Paramètres</span>
+        </button>
+      </div>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user" onclick="nav('parametres')">
+        <div class="sb-avatar">NB</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name">Nathan Bouard</div>
+          <div class="sb-user-role">Administrateur</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">Tableau de bord</div>
+      <div class="topbar-search">
+        <i data-lucide="search" style="width:14px;height:14px;stroke:var(--text3);fill:none;flex-shrink:0"></i>
+        <input type="text" placeholder="Rechercher lead, client, devis…">
+      </div>
+      <button class="tb-btn" onclick="showToast('Site ouvert dans un nouvel onglet','success')">
+        <i data-lucide="external-link" style="width:14px;height:14px;stroke:currentColor;fill:none"></i> Voir le site
+      </button>
+      <button class="tb-btn tb-notif" onclick="nav('notifications')">
+        <i data-lucide="bell" style="width:14px;height:14px;stroke:currentColor;fill:none"></i>
+        <span class="tb-notif-dot"></span>
+      </button>
+      <button class="tb-btn" onclick="doLogout()">
+        <i data-lucide="log-out" style="width:14px;height:14px;stroke:currentColor;fill:none"></i>
+      </button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="content">
+
+      <!-- ══════ DASHBOARD ══════ -->
+      <div class="view active" id="view-dashboard">
+        <div class="section-title">
+          Tableau de bord <span>Mis à jour il y a 2 min</span>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn-sec" onclick="refreshDash()"><i data-lucide="refresh-cw" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Actualiser</button>
+            <button class="btn-pri"><i data-lucide="plus" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Nouveau lead</button>
+          </div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:rgba(99,102,241,.15)"><i data-lucide="user-plus" style="width:18px;height:18px;stroke:var(--blue2);fill:none"></i></div>
+              <span class="stat-badge up" id="kpi-leads-badge">↑ +24%</span>
+            </div>
+            <div class="stat-val" id="kpi-leads">—</div>
+            <div class="stat-label">Leads total</div>
+            <div class="stat-sub" id="kpi-leads-sub">Chargement…</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:rgba(16,185,129,.15)"><i data-lucide="users" style="width:18px;height:18px;stroke:var(--green);fill:none"></i></div>
+              <span class="stat-badge up" id="kpi-clients-badge">—</span>
+            </div>
+            <div class="stat-val" id="kpi-clients">—</div>
+            <div class="stat-label">Clients actifs</div>
+            <div class="stat-sub" id="kpi-clients-sub">Chargement…</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:rgba(245,158,11,.15)"><i data-lucide="search" style="width:18px;height:18px;stroke:var(--amber);fill:none"></i></div>
+              <span class="stat-badge amber" style="background:rgba(245,158,11,.12);color:var(--amber)" id="kpi-audits-badge">En attente</span>
+            </div>
+            <div class="stat-val" id="kpi-audits">—</div>
+            <div class="stat-label">Audits en attente</div>
+            <div class="stat-sub" id="kpi-audits-sub">Chargement…</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:rgba(168,85,247,.15)"><i data-lucide="mail" style="width:18px;height:18px;stroke:var(--purple);fill:none"></i></div>
+              <span class="stat-badge up">↑</span>
+            </div>
+            <div class="stat-val" id="kpi-newsletter">—</div>
+            <div class="stat-label">Abonnés newsletter</div>
+            <div class="stat-sub" id="kpi-newsletter-sub">Chargement…</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Revenue chart + Pipeline -->
+        <div class="grid-21" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-title">Revenus & Leads — 6 derniers mois <span>Mensuel</span></div>
+            <div class="chart-container"><canvas id="revenueChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Pipeline commercial</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>Prospects</span><span style="font-weight:600">24</span></div>
+                <div class="progress"><div class="progress-bar" style="width:80%;background:var(--blue)"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>Contactés</span><span style="font-weight:600">18</span></div>
+                <div class="progress"><div class="progress-bar" style="width:60%;background:var(--cyan)"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>Devis envoyés</span><span style="font-weight:600">9</span></div>
+                <div class="progress"><div class="progress-bar" style="width:30%;background:var(--amber)"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>Négociation</span><span style="font-weight:600">5</span></div>
+                <div class="progress"><div class="progress-bar" style="width:17%;background:var(--purple)"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span>Signés ✓</span><span style="font-weight:600;color:var(--green)">3</span></div>
+                <div class="progress"><div class="progress-bar" style="width:10%;background:var(--green)"></div></div>
+              </div>
+            </div>
+            <hr class="divider">
+            <div style="display:flex;justify-content:space-between;font-size:12px">
+              <span style="color:var(--text3)">Taux de conversion</span>
+              <span style="font-weight:700;color:var(--green)">12.5%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Recent leads + Activity -->
+        <div class="grid-21" style="margin-bottom:16px">
+          <div class="table-wrap">
+            <div class="table-header">
+              <h3>Derniers leads</h3>
+              <div class="table-actions">
+                <button class="btn-sec" onclick="nav('leads')">Voir tout</button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Contact</th><th>Source</th><th>Service</th><th>Statut</th><th>Date</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="td-name">Marie Dupont</div><div class="td-sub">marie@restaurant.fr</div></td><td><span class="chip">Audit</span></td><td><span class="badge badge-blue">SEO</span></td><td><span class="badge badge-amber badge-dot">Nouveau</span></td><td class="td-sub">Auj. 09:42</td></tr>
+                  <tr><td><div class="td-name">Thomas Rieu</div><div class="td-sub">thomas@pme.com</div></td><td><span class="chip">Contact</span></td><td><span class="badge badge-purple">Ads</span></td><td><span class="badge badge-blue badge-dot">Contacté</span></td><td class="td-sub">Hier 14:20</td></tr>
+                  <tr><td><div class="td-name">Camille Noel</div><div class="td-sub">c.noel@startup.io</div></td><td><span class="chip">Site web</span></td><td><span class="badge badge-cyan">Site web</span></td><td><span class="badge badge-green badge-dot">Devis</span></td><td class="td-sub">12/03 11:05</td></tr>
+                  <tr><td><div class="td-name">Lucas Bernard</div><div class="td-sub">lucas.b@ecom.fr</div></td><td><span class="chip">Lead Magnet</span></td><td><span class="badge badge-amber">E-com</span></td><td><span class="badge badge-green badge-dot">Signé</span></td><td class="td-sub">11/03 16:48</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Activité récente</div>
+            <div class="timeline">
+              <div class="tl-item">
+                <div class="tl-dot" style="background:rgba(16,185,129,.15)"><i data-lucide="check" style="width:12px;height:12px;stroke:var(--green);fill:none"></i></div>
+                <div class="tl-body"><div class="tl-title">Audit livré — Café Le Provençal</div><div class="tl-time">Il y a 15 min</div></div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot" style="background:rgba(99,102,241,.15)"><i data-lucide="mail" style="width:12px;height:12px;stroke:var(--blue);fill:none"></i></div>
+                <div class="tl-body"><div class="tl-title">Newsletter envoyée — 847 destinataires</div><div class="tl-time">Il y a 2h</div></div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot" style="background:rgba(245,158,11,.15)"><i data-lucide="file-text" style="width:12px;height:12px;stroke:var(--amber);fill:none"></i></div>
+                <div class="tl-body"><div class="tl-title">Devis #024 envoyé — 2 800 €</div><div class="tl-time">Il y a 3h</div></div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot" style="background:rgba(168,85,247,.15)"><i data-lucide="user-plus" style="width:12px;height:12px;stroke:var(--purple);fill:none"></i></div>
+                <div class="tl-body"><div class="tl-title">Nouveau lead — Marie Dupont</div><div class="tl-time">Il y a 4h</div></div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot" style="background:rgba(239,68,68,.15)"><i data-lucide="x" style="width:12px;height:12px;stroke:var(--red);fill:none"></i></div>
+                <div class="tl-body"><div class="tl-title">Devis #021 refusé — Immobilier Sète</div><div class="tl-time">Hier 18:30</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 4: Audits en attente + Newsletter stats -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Audits en attente <span>3 à traiter</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:var(--bg3);border-radius:var(--rs);padding:12px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--red)">
+                <div class="avatar" style="background:linear-gradient(135deg,#dc2626,#b45309)">R</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:600">Restaurant Le Sud</div><div style="font-size:11px;color:var(--text3)">Demandé il y a 26h · URGENT</div></div>
+                <button class="btn-pri" style="padding:5px 10px;font-size:11px" onclick="nav('audits')">Traiter</button>
+              </div>
+              <div style="background:var(--bg3);border-radius:var(--rs);padding:12px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--amber)">
+                <div class="avatar" style="background:linear-gradient(135deg,#d97706,#b45309)">P</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:600">PME Vidal Conseil</div><div style="font-size:11px;color:var(--text3)">Demandé il y a 8h</div></div>
+                <button class="btn-sec" style="padding:5px 10px;font-size:11px" onclick="nav('audits')">Voir</button>
+              </div>
+              <div style="background:var(--bg3);border-radius:var(--rs);padding:12px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--blue)">
+                <div class="avatar">E</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:600">E-Shop Montpellier</div><div style="font-size:11px;color:var(--text3)">Demandé il y a 2h</div></div>
+                <button class="btn-sec" style="padding:5px 10px;font-size:11px" onclick="nav('audits')">Voir</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Performance Newsletter <span>Dernière campagne</span></div>
+            <div class="chart-container" style="height:140px"><canvas id="nlChart"></canvas></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;text-align:center">
+              <div><div style="font-size:20px;font-weight:800;font-family:var(--font);color:var(--blue2)">847</div><div style="font-size:11px;color:var(--text3)">Envoyés</div></div>
+              <div><div style="font-size:20px;font-weight:800;font-family:var(--font);color:var(--green)">38.2%</div><div style="font-size:11px;color:var(--text3)">Taux ouv.</div></div>
+              <div><div style="font-size:20px;font-weight:800;font-family:var(--font);color:var(--amber)">12.4%</div><div style="font-size:11px;color:var(--text3)">Taux clic</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ ANALYTICS ══════ -->
+      <div class="view" id="view-analytics">
+        <div class="section-title">
+          Analytique temps réel
+          <span style="display:flex;align-items:center;gap:5px;color:var(--green)"><span class="rt-dot"></span> En direct</span>
+          <div style="margin-left:auto"><button class="btn-sec"><i data-lucide="calendar" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> 30 derniers jours</button></div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-top"><div class="stat-icon" style="background:rgba(6,182,212,.15)"><i data-lucide="eye" style="width:18px;height:18px;stroke:var(--cyan);fill:none"></i></div><span class="stat-badge up">↑ +12%</span></div>
+            <div class="stat-val" id="rt-visitors">247</div>
+            <div class="stat-label">Visiteurs actifs maintenant</div>
+            <div class="stat-sub">+1 240 sessions aujourd'hui</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><div class="stat-icon" style="background:rgba(99,102,241,.15)"><i data-lucide="mouse-pointer" style="width:18px;height:18px;stroke:var(--blue2);fill:none"></i></div><span class="stat-badge up">↑ +8%</span></div>
+            <div class="stat-val">3.4</div>
+            <div class="stat-label">Pages/session</div>
+            <div class="stat-sub">Durée moy. : 2m 18s</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><div class="stat-icon" style="background:rgba(239,68,68,.15)"><i data-lucide="log-out" style="width:18px;height:18px;stroke:var(--red);fill:none"></i></div><span class="stat-badge down">↑ +2%</span></div>
+            <div class="stat-val">42.1%</div>
+            <div class="stat-label">Taux de rebond</div>
+            <div class="stat-sub">Objectif : &lt; 40%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><div class="stat-icon" style="background:rgba(16,185,129,.15)"><i data-lucide="target" style="width:18px;height:18px;stroke:var(--green);fill:none"></i></div><span class="stat-badge up">↑ +31%</span></div>
+            <div class="stat-val">6.8%</div>
+            <div class="stat-label">Taux de conversion</div>
+            <div class="stat-sub">Formulaires & audits</div>
+          </div>
+        </div>
+        <div class="grid-21" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-title">Trafic — 30 jours <span>Sessions & Conversions</span></div>
+            <div class="chart-container" style="height:240px"><canvas id="trafficChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Sources de trafic</div>
+            <div class="chart-container" style="height:180px"><canvas id="sourcesChart"></canvas></div>
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px;font-size:12px">
+              <div style="display:flex;justify-content:space-between"><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:var(--blue);display:inline-block"></span>Organique</span><span style="font-weight:600">48%</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:var(--amber);display:inline-block"></span>Direct</span><span style="font-weight:600">22%</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:var(--purple);display:inline-block"></span>Réseaux sociaux</span><span style="font-weight:600">18%</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:var(--cyan);display:inline-block"></span>Référents</span><span style="font-weight:600">12%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Pages les plus visitées</div>
+            <table style="width:100%">
+              <thead><tr><th>Page</th><th>Vues</th><th>Taux sortie</th></tr></thead>
+              <tbody>
+                <tr><td class="td-name">/accueil</td><td>1 842</td><td><span class="badge badge-green">28%</span></td></tr>
+                <tr><td class="td-name">/audit-gratuit</td><td>986</td><td><span class="badge badge-green">31%</span></td></tr>
+                <tr><td class="td-name">/services/seo</td><td>742</td><td><span class="badge badge-amber">48%</span></td></tr>
+                <tr><td class="td-name">/blog</td><td>618</td><td><span class="badge badge-amber">52%</span></td></tr>
+                <tr><td class="td-name">/contact</td><td>403</td><td><span class="badge badge-red">61%</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-title">Indicateurs SEO</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Position moy. Google</span><span style="font-weight:800;font-family:var(--font);font-size:18px;color:var(--green)">7.4</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Impressions mensuelles</span><span style="font-weight:800;font-family:var(--font);font-size:18px;color:var(--blue2)">12 400</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Clics organiques</span><span style="font-weight:800;font-family:var(--font);font-size:18px;color:var(--blue2)">842</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">CTR moyen</span><span style="font-weight:800;font-family:var(--font);font-size:18px;color:var(--amber)">6.8%</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Pages indexées</span><span style="font-weight:800;font-family:var(--font);font-size:18px;color:var(--text)">47</span></div>
+              <hr class="divider">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Core Web Vitals</span><span class="badge badge-green">✓ Bon</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Score mobile</span><span style="font-weight:700;color:var(--amber)">82/100</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ LEADS ══════ -->
+      <div class="view" id="view-leads">
+        <div class="section-title">
+          Leads <span>47 ce mois · 12 nouveaux</span>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn-sec"><i data-lucide="download" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Exporter CSV</button>
+            <button class="btn-pri" onclick="openModal('modal-add-lead')"><i data-lucide="plus" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Ajouter un lead</button>
+          </div>
+        </div>
+        <div class="tabs">
+          <button class="tab active" onclick="tabSwitch(this,'leads')">Tous (47)</button>
+          <button class="tab" onclick="tabSwitch(this,'leads')">Nouveaux (12)</button>
+          <button class="tab" onclick="tabSwitch(this,'leads')">Contactés (18)</button>
+          <button class="tab" onclick="tabSwitch(this,'leads')">Devis (9)</button>
+          <button class="tab" onclick="tabSwitch(this,'leads')">Signés (8)</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header">
+            <h3>Liste des leads</h3>
+            <div class="table-actions">
+              <button class="btn-sec"><i data-lucide="filter" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Filtrer</button>
+              <button class="btn-sec"><i data-lucide="columns" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Colonnes</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th><input type="checkbox"></th><th>Contact</th><th>Entreprise</th><th>Service souhaité</th><th>Source</th><th>Statut</th><th>Budget</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="leads-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Kanban leads -->
+        <div style="margin-top:24px">
+          <div class="card-title" style="font-family:var(--font);font-size:15px;font-weight:700;margin-bottom:14px">Vue Kanban</div>
+          <div class="kanban">
+            <div class="kanban-col">
+              <div class="kanban-col-header" style="color:var(--text2)">Nouveau <span class="kanban-count">12</span></div>
+              <div class="kcard"><div class="kcard-title">Marie Dupont</div><div class="kcard-meta"><span class="badge badge-blue">SEO</span><span>Audit</span></div></div>
+              <div class="kcard"><div class="kcard-title">Paul Girard</div><div class="kcard-meta"><span class="badge badge-cyan">Site web</span><span>Contact</span></div></div>
+              <div class="kcard"><div class="kcard-title">Sophie Laurent</div><div class="kcard-meta"><span class="badge badge-purple">Ads</span><span>LM</span></div></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header" style="color:var(--cyan)">Contacté <span class="kanban-count">18</span></div>
+              <div class="kcard"><div class="kcard-title">Thomas Rieu</div><div class="kcard-meta"><span class="badge badge-purple">Meta Ads</span><span>Contact</span></div></div>
+              <div class="kcard"><div class="kcard-title">Isabelle Moreau</div><div class="kcard-meta"><span class="badge badge-amber">CM</span><span>Site</span></div></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header" style="color:var(--amber)">Devis envoyé <span class="kanban-count">9</span></div>
+              <div class="kcard" style="border-color:var(--amber)"><div class="kcard-title">Camille Noel</div><div class="kcard-meta"><span class="badge badge-cyan">Site web</span><span>2 800 €</span></div></div>
+              <div class="kcard"><div class="kcard-title">Marc Fabre</div><div class="kcard-meta"><span class="badge badge-blue">SEO</span><span>1 200 €</span></div></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header" style="color:var(--green)">Signé ✓ <span class="kanban-count">8</span></div>
+              <div class="kcard" style="border-color:var(--green)"><div class="kcard-title">Lucas Bernard</div><div class="kcard-meta"><span class="badge badge-amber">E-com</span><span>3 600 €</span></div></div>
+              <div class="kcard" style="border-color:var(--green)"><div class="kcard-title">Nathalie Petit</div><div class="kcard-meta"><span class="badge badge-blue">SEO</span><span>900 €/mois</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ CLIENTS ══════ -->
+      <div class="view" id="view-clients">
+        <div class="section-title">Clients <span>18 actifs · 3 inactifs</span>
+          <div style="margin-left:auto"><button class="btn-pri" onclick="openModal('modal-add-lead')"><i data-lucide="plus" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Nouveau client</button></div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header"><h3>Base clients</h3><div class="table-actions"><button class="btn-sec"><i data-lucide="download" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Export</button></div></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Client</th><th>SIRET</th><th>Services</th><th>CA mensuel</th><th>Contrat</th><th>Statut</th><th>Depuis</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr><td><div class="td-name">Lucas Bernard — E-Shop MLR</div><div class="td-sub">lucas.b@ecom.fr · +33 6 12 34 56 78</div></td><td class="td-sub">83742918400019</td><td><span class="badge badge-amber">E-com</span> <span class="badge badge-blue">SEO</span></td><td style="font-weight:700;color:var(--green)">600 €</td><td><span class="badge badge-green">12 mois</span></td><td><span class="badge badge-green badge-dot">Actif</span></td><td class="td-sub">Jan 2025</td><td><button class="btn-ghost">Voir</button><button class="btn-ghost">Éditer</button></td></tr>
+                <tr><td><div class="td-name">Nathalie Petit — Cabinet NP</div><div class="td-sub">n.petit@cabinet.fr</div></td><td class="td-sub">75319482600012</td><td><span class="badge badge-blue">SEO</span></td><td style="font-weight:700;color:var(--green)">900 €</td><td><span class="badge badge-amber">6 mois</span></td><td><span class="badge badge-green badge-dot">Actif</span></td><td class="td-sub">Nov 2024</td><td><button class="btn-ghost">Voir</button><button class="btn-ghost">Éditer</button></td></tr>
+                <tr><td><div class="td-name">Restaurant Le Provençal</div><div class="td-sub">contact@leprovencal.fr</div></td><td class="td-sub">41238974600031</td><td><span class="badge badge-purple">Meta Ads</span> <span class="badge badge-cyan">CM</span></td><td style="font-weight:700;color:var(--green)">750 €</td><td><span class="badge badge-green">12 mois</span></td><td><span class="badge badge-green badge-dot">Actif</span></td><td class="td-sub">Sept 2024</td><td><button class="btn-ghost">Voir</button><button class="btn-ghost">Éditer</button></td></tr>
+                <tr><td><div class="td-name">Immo Sète Gestion</div><div class="td-sub">contact@immo-sete.fr</div></td><td class="td-sub">60194827300044</td><td><span class="badge badge-blue">SEO</span> <span class="badge badge-amber">Ads</span></td><td style="color:var(--red)">0 €</td><td><span class="badge badge-red">Résilié</span></td><td><span class="badge badge-red badge-dot">Inactif</span></td><td class="td-sub">Avr 2024</td><td><button class="btn-ghost">Voir</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ CONTACTS ══════ -->
+      <div class="view" id="view-contacts">
+        <div class="section-title">Prises de contact <span>5 non traitées</span></div>
+        <div class="table-wrap">
+          <div class="table-header"><h3>Messages reçus</h3><div class="table-actions"><button class="btn-sec">Tout marquer lu</button></div></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th></th><th>Expéditeur</th><th>Sujet</th><th>Message (aperçu)</th><th>Statut</th><th>Reçu le</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr style="background:rgba(99,102,241,.04)"><td><span class="rt-dot" style="display:inline-block"></span></td><td><div class="td-name">Arnaud Dupuis</div><div class="td-sub">arnaud@pme.com</div></td><td><span class="badge badge-blue">SEO + Site</span></td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">Bonjour, je cherche à refaire mon site et améliorer…</td><td><span class="badge badge-amber badge-dot">Non traité</span></td><td class="td-sub">Auj. 10:14</td><td><button class="btn-pri" style="padding:5px 10px;font-size:11px">Répondre</button></td></tr>
+                <tr style="background:rgba(99,102,241,.04)"><td><span class="rt-dot" style="display:inline-block"></span></td><td><div class="td-name">Julie Renard</div><div class="td-sub">j.renard@salon.fr</div></td><td><span class="badge badge-cyan">CM</span></td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">Je gère un salon de coiffure et je veux développer…</td><td><span class="badge badge-amber badge-dot">Non traité</span></td><td class="td-sub">Hier 16:42</td><td><button class="btn-pri" style="padding:5px 10px;font-size:11px">Répondre</button></td></tr>
+                <tr><td></td><td><div class="td-name">Pierre Moreau</div><div class="td-sub">p.moreau@btp.fr</div></td><td><span class="badge badge-purple">Branding</span></td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">Nous souhaitons refaire notre identité visuelle…</td><td><span class="badge badge-blue badge-dot">En cours</span></td><td class="td-sub">12/03</td><td><button class="btn-ghost">Voir</button></td></tr>
+                <tr><td></td><td><div class="td-name">Clara Bosc</div><div class="td-sub">c.bosc@startup.io</div></td><td><span class="badge badge-amber">Google Ads</span></td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">Budget de 2000€/mois pour des campagnes Google…</td><td><span class="badge badge-green badge-dot">Traité</span></td><td class="td-sub">11/03</td><td><button class="btn-ghost">Voir</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ DEVIS ══════ -->
+      <div class="view" id="view-devis">
+        <div class="section-title">Devis <span>6 en attente · 14 200 € à signer</span>
+          <div style="margin-left:auto"><button class="btn-pri" onclick="openModal('modal-add-lead')"><i data-lucide="plus" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Créer un devis</button></div>
+        </div>
+        <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(245,158,11,.15)"><i data-lucide="clock" style="width:18px;height:18px;stroke:var(--amber);fill:none"></i></div></div><div class="stat-val">6</div><div class="stat-label">En attente</div><div class="stat-sub">14 200 € total</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(16,185,129,.15)"><i data-lucide="check-circle" style="width:18px;height:18px;stroke:var(--green);fill:none"></i></div></div><div class="stat-val">14</div><div class="stat-label">Acceptés</div><div class="stat-sub">Ce mois : 3</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(239,68,68,.15)"><i data-lucide="x-circle" style="width:18px;height:18px;stroke:var(--red);fill:none"></i></div></div><div class="stat-val">4</div><div class="stat-label">Refusés</div><div class="stat-sub">Taux refus : 22%</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(99,102,241,.15)"><i data-lucide="trending-up" style="width:18px;height:18px;stroke:var(--blue2);fill:none"></i></div></div><div class="stat-val">58%</div><div class="stat-label">Taux de convers.</div><div class="stat-sub">Objectif 65%</div></div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>N° Devis</th><th>Client</th><th>Services</th><th>Montant HT</th><th>Envoyé le</th><th>Validité</th><th>Statut</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr><td class="td-name">#024</td><td><div class="td-name">Camille Noel — Startup.io</div></td><td><span class="badge badge-cyan">Site web</span></td><td style="font-weight:700">2 800 €</td><td class="td-sub">12/03/2025</td><td><span class="badge badge-amber">3 j restants</span></td><td><span class="badge badge-amber badge-dot">En attente</span></td><td><button class="btn-ghost">Voir</button><button class="btn-ghost">Relancer</button></td></tr>
+                <tr><td class="td-name">#023</td><td><div class="td-name">Marc Fabre — Artisan</div></td><td><span class="badge badge-blue">SEO</span></td><td style="font-weight:700">1 200 €</td><td class="td-sub">10/03/2025</td><td><span class="badge badge-red">Expiré</span></td><td><span class="badge badge-red badge-dot">Relancer</span></td><td><button class="btn-ghost">Voir</button><button class="btn-pri" style="padding:5px 10px;font-size:11px">Relancer</button></td></tr>
+                <tr><td class="td-name">#022</td><td><div class="td-name">Lucas Bernard — E-Shop</div></td><td><span class="badge badge-amber">E-com</span> <span class="badge badge-blue">SEO</span></td><td style="font-weight:700;color:var(--green)">3 600 €</td><td class="td-sub">08/03/2025</td><td>—</td><td><span class="badge badge-green badge-dot">Accepté</span></td><td><button class="btn-ghost">Voir</button><button class="btn-ghost">Facture</button></td></tr>
+                <tr><td class="td-name">#021</td><td><div class="td-name">Immo Sète Gestion</div></td><td><span class="badge badge-blue">SEO</span> <span class="badge badge-amber">Ads</span></td><td style="font-weight:700;color:var(--red)">4 200 €</td><td class="td-sub">01/03/2025</td><td>—</td><td><span class="badge badge-red badge-dot">Refusé</span></td><td><button class="btn-ghost">Voir</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ AUDITS ══════ -->
+      <div class="view" id="view-audits">
+        <div class="section-title">Demandes d'audit <span>3 à traiter en urgence</span></div>
+        <div class="grid-3" style="margin-bottom:20px">
+          <div class="stat-card" style="border-color:rgba(239,68,68,.3)"><div class="stat-top"><div class="stat-icon" style="background:rgba(239,68,68,.15)"><i data-lucide="alert-triangle" style="width:18px;height:18px;stroke:var(--red);fill:none"></i></div><span class="stat-badge" style="background:rgba(239,68,68,.12);color:var(--red)">URGENT</span></div><div class="stat-val">3</div><div class="stat-label">En attente (+24h)</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(245,158,11,.15)"><i data-lucide="clock" style="width:18px;height:18px;stroke:var(--amber);fill:none"></i></div></div><div class="stat-val">5</div><div class="stat-label">En cours d'analyse</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(16,185,129,.15)"><i data-lucide="check-circle" style="width:18px;height:18px;stroke:var(--green);fill:none"></i></div></div><div class="stat-val">42</div><div class="stat-label">Livrés ce mois</div></div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header"><h3>File d'attente — Audits</h3><div class="table-actions"><button class="btn-pri"><i data-lucide="plus" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Créer un audit</button></div></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Entreprise</th><th>Contact</th><th>Site web</th><th>Services demandés</th><th>Livraison</th><th>Priorité</th><th>Statut</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr style="background:rgba(239,68,68,.04)"><td><div class="td-name">Restaurant Le Sud</div><div class="td-sub">restaurantlesud.fr</div></td><td><div class="td-name">Luc Martin</div><div class="td-sub">luc@resto.fr</div></td><td><a href="#" style="color:var(--blue2);font-size:12px">Voir le site ↗</a></td><td><span class="badge badge-blue">SEO</span> <span class="badge badge-cyan">CM</span></td><td><span class="badge badge-red">Email · URGENT</span></td><td><span class="badge badge-red">🔴 Haute</span></td><td><span class="badge badge-amber badge-dot">En attente</span></td><td><button class="btn-pri" style="padding:5px 10px;font-size:11px">Démarrer</button></td></tr>
+                <tr style="background:rgba(245,158,11,.04)"><td><div class="td-name">PME Vidal Conseil</div></td><td><div class="td-name">Sophie Vidal</div><div class="td-sub">s.vidal@conseil.fr</div></td><td><a href="#" style="color:var(--blue2);font-size:12px">Voir le site ↗</a></td><td><span class="badge badge-blue">SEO</span></td><td><span class="badge badge-amber">Email + Postal</span></td><td><span class="badge badge-amber">🟡 Moyenne</span></td><td><span class="badge badge-amber badge-dot">En attente</span></td><td><button class="btn-sec" style="padding:5px 10px;font-size:11px">Démarrer</button></td></tr>
+                <tr><td><div class="td-name">E-Shop Montpellier</div></td><td><div class="td-name">Pierre Blanc</div><div class="td-sub">pierre@eshop.fr</div></td><td><a href="#" style="color:var(--blue2);font-size:12px">Voir le site ↗</a></td><td><span class="badge badge-purple">Ads</span> <span class="badge badge-amber">E-com</span></td><td><span class="badge badge-blue">Email</span></td><td><span class="badge badge-blue">🔵 Normale</span></td><td><span class="badge badge-amber badge-dot">En attente</span></td><td><button class="btn-sec" style="padding:5px 10px;font-size:11px">Démarrer</button></td></tr>
+                <tr><td><div class="td-name">Café Le Provençal</div></td><td><div class="td-name">Ana Ferreira</div></td><td><a href="#" style="color:var(--blue2);font-size:12px">Voir le site ↗</a></td><td><span class="badge badge-cyan">CM</span></td><td><span class="badge badge-blue">Email</span></td><td><span class="badge badge-blue">🔵 Normale</span></td><td><span class="badge badge-blue badge-dot">En cours</span></td><td><button class="btn-ghost">Continuer</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ LIVRAISONS ══════ -->
+      <div class="view" id="view-livraisons">
+        <div class="section-title">Livraisons d'audit <span>42 livrés ce mois</span></div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Audit</th><th>Client</th><th>Type livraison</th><th>Envoyé le</th><th>Ouverture email</th><th>Feedback</th><th>Statut</th></tr></thead>
+              <tbody>
+                <tr><td class="td-name">#A042 — Café Le Provençal</td><td class="td-sub">ana@cafe.fr</td><td><span class="badge badge-blue">Email PDF</span></td><td class="td-sub">Auj. 09:30</td><td><span class="badge badge-green">Ouvert ✓</span></td><td><span class="stars">★★★★★</span></td><td><span class="badge badge-green badge-dot">Livré</span></td></tr>
+                <tr><td class="td-name">#A041 — Nathalie Petit</td><td class="td-sub">n.petit@cabinet.fr</td><td><span class="badge badge-purple">Email + Postal</span></td><td class="td-sub">Hier 14:00</td><td><span class="badge badge-green">Ouvert ✓</span></td><td><span class="stars">★★★★☆</span></td><td><span class="badge badge-amber badge-dot">Postal en route</span></td></tr>
+                <tr><td class="td-name">#A040 — Lucas Bernard</td><td class="td-sub">lucas.b@ecom.fr</td><td><span class="badge badge-blue">Email PDF</span></td><td class="td-sub">12/03</td><td><span class="badge badge-amber">Non ouvert</span></td><td>—</td><td><span class="badge badge-amber badge-dot">Relancer</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ NEWSLETTER ══════ -->
+      <div class="view" id="view-newsletter">
+        <div class="section-title">Newsletter <span>847 abonnés actifs</span>
+          <div style="margin-left:auto"><button class="btn-pri"><i data-lucide="plus" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Nouvelle campagne</button></div>
+        </div>
+        <div class="grid-2" style="margin-bottom:20px">
+          <div class="stats-row" style="grid-template-columns:1fr 1fr">
+            <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(99,102,241,.15)"><i data-lucide="users" style="width:18px;height:18px;stroke:var(--blue2);fill:none"></i></div></div><div class="stat-val">847</div><div class="stat-label">Abonnés</div><div class="stat-sub">+32 ce mois</div></div>
+            <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(16,185,129,.15)"><i data-lucide="mail-open" style="width:18px;height:18px;stroke:var(--green);fill:none"></i></div></div><div class="stat-val">38.2%</div><div class="stat-label">Taux d'ouverture</div><div class="stat-sub">Industrie : 22%</div></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Évolution abonnés</div>
+            <div class="chart-container" style="height:120px"><canvas id="nlGrowthChart"></canvas></div>
+          </div>
+        </div>
+        <!-- Tabs -->
+        <div class="tabs"><button class="tab active">Campagnes</button><button class="tab">Abonnés</button><button class="tab">Listes</button><button class="tab">Templates</button></div>
+        <div class="table-wrap">
+          <div class="table-header"><h3>Historique des campagnes</h3></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Nom de la campagne</th><th>Envoyés</th><th>Ouverts</th><th>Clics</th><th>Désinscriptions</th><th>Date</th><th>Statut</th></tr></thead>
+              <tbody>
+                <tr><td class="td-name">5 erreurs SEO fatales pour les PME</td><td>847</td><td><span style="color:var(--green);font-weight:600">38.2%</span></td><td><span style="color:var(--blue2);font-weight:600">12.4%</span></td><td><span style="color:var(--red)">3</span></td><td class="td-sub">Lun 10/03</td><td><span class="badge badge-green">Envoyée</span></td></tr>
+                <tr><td class="td-name">Guide Meta Ads — téléchargez gratuitement</td><td>815</td><td><span style="color:var(--green);font-weight:600">41.8%</span></td><td><span style="color:var(--blue2);font-weight:600">18.2%</span></td><td><span style="color:var(--red)">1</span></td><td class="td-sub">Lun 03/03</td><td><span class="badge badge-green">Envoyée</span></td></tr>
+                <tr><td class="td-name">Tendances marketing digital 2025</td><td>792</td><td><span style="color:var(--amber);font-weight:600">29.1%</span></td><td><span style="color:var(--blue2);font-weight:600">9.8%</span></td><td><span style="color:var(--red)">5</span></td><td class="td-sub">Lun 24/02</td><td><span class="badge badge-green">Envoyée</span></td></tr>
+                <tr><td class="td-name" style="color:var(--text3)">Prochaine édition — Semaine 13</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="td-sub">Lun 17/03</td><td><span class="badge badge-amber">Brouillon</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ RESSOURCES / LEAD MAGNETS ══════ -->
+      <div class="view" id="view-ressources">
+        <div class="section-title">Lead Magnets & Téléchargements</div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(99,102,241,.15)"><i data-lucide="download" style="width:18px;height:18px;stroke:var(--blue2);fill:none"></i></div></div><div class="stat-val">312</div><div class="stat-label">Téléchargements</div><div class="stat-sub">Ce mois</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(16,185,129,.15)"><i data-lucide="user-check" style="width:18px;height:18px;stroke:var(--green);fill:none"></i></div></div><div class="stat-val">78%</div><div class="stat-label">Conversion email</div><div class="stat-sub">312 emails capturés</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(245,158,11,.15)"><i data-lucide="file-text" style="width:18px;height:18px;stroke:var(--amber);fill:none"></i></div></div><div class="stat-val">1</div><div class="stat-label">Lead magnets actifs</div><div class="stat-sub">2 en préparation</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:rgba(168,85,247,.15)"><i data-lucide="trending-up" style="width:18px;height:18px;stroke:var(--purple);fill:none"></i></div></div><div class="stat-val">4.2%</div><div class="stat-label">Leads générés</div><div class="stat-sub">Du trafic total</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="table-wrap">
+            <div class="table-header"><h3>Ressources disponibles</h3><div class="table-actions"><button class="btn-pri"><i data-lucide="upload" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Uploader fichier</button></div></div>
+            <table>
+              <thead><tr><th>Ressource</th><th>Téléch.</th><th>Fichier</th><th>Statut</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr><td><div class="td-name">Guide PME Marketing Digital</div><div class="td-sub">guide-pme.pdf · 2.4 Mo</div></td><td style="font-weight:600;color:var(--blue2)">312</td><td><span class="badge badge-amber">En attente fichier</span></td><td><span class="badge badge-green badge-dot">Actif</span></td><td><button class="btn-pri" style="padding:5px 10px;font-size:11px">Uploader PDF</button></td></tr>
+                <tr><td><div class="td-name">Guide SEO Local</div><div class="td-sub">guide-seo-local.pdf</div></td><td>—</td><td><span class="badge badge-gray">Non créé</span></td><td><span class="badge badge-amber badge-dot">Bientôt</span></td><td><button class="btn-sec" style="padding:5px 10px;font-size:11px">Préparer</button></td></tr>
+                <tr><td><div class="td-name">Guide Meta Ads & Google Ads</div></td><td>—</td><td><span class="badge badge-gray">Non créé</span></td><td><span class="badge badge-amber badge-dot">Bientôt</span></td><td><button class="btn-sec" style="padding:5px 10px;font-size:11px">Préparer</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header"><h3>Derniers téléchargements</h3></div>
+            <table>
+              <thead><tr><th>Email</th><th>Ressource</th><th>Date</th></tr></thead>
+              <tbody>
+                <tr><td class="td-sub">marie.d@exemple.fr</td><td class="td-sub">Guide PME</td><td class="td-sub">Auj. 11:20</td></tr>
+                <tr><td class="td-sub">thomas.r@gmail.com</td><td class="td-sub">Guide PME</td><td class="td-sub">Auj. 09:44</td></tr>
+                <tr><td class="td-sub">contact@artisan.fr</td><td class="td-sub">Guide PME</td><td class="td-sub">Hier 17:22</td></tr>
+                <tr><td class="td-sub">n.petit@cabinet.fr</td><td class="td-sub">Guide PME</td><td class="td-sub">Hier 14:05</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ MODÉRATION ══════ -->
+      <div class="view" id="view-moderation">
+        <div class="section-title">Modération <span>2 éléments à examiner</span></div>
+        <div class="grid-2" style="margin-bottom:16px">
+          <div class="table-wrap">
+            <div class="table-header"><h3>🚨 Signalements</h3></div>
+            <table>
+              <thead><tr><th>Type</th><th>Détail</th><th>IP</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr style="background:rgba(239,68,68,.04)"><td><span class="badge badge-red">Spam formulaire</span></td><td class="td-sub">Formulaire contact · 14 soumissions suspectes</td><td class="td-sub">185.220.101.x</td><td class="td-sub">Auj. 07:12</td><td><button class="btn-danger">Bloquer IP</button></td></tr>
+                <tr style="background:rgba(245,158,11,.04)"><td><span class="badge badge-amber">Bot détecté</span></td><td class="td-sub">Scraping pages services</td><td class="td-sub">45.148.10.x</td><td class="td-sub">Hier</td><td><button class="btn-danger">Bloquer</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header"><h3>🔒 IPs bloquées</h3><div class="table-actions"><button class="btn-sec"><i data-lucide="plus" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Ajouter</button></div></div>
+            <table>
+              <thead><tr><th>IP</th><th>Raison</th><th>Date</th><th></th></tr></thead>
+              <tbody>
+                <tr><td class="td-name">192.168.44.x</td><td class="td-sub">Spam audit ×32</td><td class="td-sub">08/03</td><td><button class="btn-ghost" style="color:var(--red)">Débloquer</button></td></tr>
+                <tr><td class="td-name">78.144.201.x</td><td class="td-sub">Bot crawl</td><td class="td-sub">01/03</td><td><button class="btn-ghost" style="color:var(--red)">Débloquer</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Journal d'activité — Sécurité</div>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot" style="background:rgba(239,68,68,.15)"><i data-lucide="shield-off" style="width:12px;height:12px;stroke:var(--red);fill:none"></i></div><div class="tl-body"><div class="tl-title">14 soumissions spam bloquées — formulaire contact</div><div class="tl-time">Auj. 07:12 · IP 185.220.101.x</div></div></div>
+            <div class="tl-item"><div class="tl-dot" style="background:rgba(16,185,129,.15)"><i data-lucide="log-in" style="width:12px;height:12px;stroke:var(--green);fill:none"></i></div><div class="tl-body"><div class="tl-title">Connexion administrateur réussie</div><div class="tl-time">Auj. 08:45 · Nathan Bouard</div></div></div>
+            <div class="tl-item"><div class="tl-dot" style="background:rgba(245,158,11,.15)"><i data-lucide="eye" style="width:12px;height:12px;stroke:var(--amber);fill:none"></i></div><div class="tl-body"><div class="tl-title">Activité inhabituelle détectée — scraping pages</div><div class="tl-time">Hier 23:18 · IP 45.148.10.x</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ NOTIFICATIONS ══════ -->
+      <div class="view" id="view-notifications">
+        <div class="section-title">Notifications <span>7 non lues</span>
+          <div style="margin-left:auto"><button class="btn-sec" onclick="document.querySelectorAll('.notif-dot').forEach(d=>d.style.display='none')">Tout marquer lu</button></div>
+        </div>
+        <div class="card">
+          <div class="notif-item">
+            <div class="notif-dot"></div>
+            <div class="notif-body"><div class="notif-title">🔴 Audit en retard — Restaurant Le Sud</div><div class="notif-desc">La demande d'audit est en attente depuis plus de 24h. Délai de livraison garanti dépassé.</div><div class="notif-time">Il y a 2h</div></div>
+            <button class="btn-pri" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="nav('audits')">Traiter</button>
+          </div>
+          <div class="notif-item">
+            <div class="notif-dot"></div>
+            <div class="notif-body"><div class="notif-title">📬 Nouveau lead — Marie Dupont</div><div class="notif-desc">Via formulaire audit gratuit. Service demandé : SEO. Budget envisagé : 500–1000€/mois.</div><div class="notif-time">Il y a 4h</div></div>
+            <button class="btn-sec" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="nav('leads')">Voir</button>
+          </div>
+          <div class="notif-item">
+            <div class="notif-dot"></div>
+            <div class="notif-body"><div class="notif-title">💬 Message non traité — Julie Renard</div><div class="notif-desc">Demande de renseignements Community Management. En attente depuis hier 16:42.</div><div class="notif-time">Hier 16:42</div></div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-body"><div class="notif-title">✅ Newsletter envoyée avec succès</div><div class="notif-desc">Campagne "5 erreurs SEO fatales" envoyée à 847 abonnés. Taux d'ouverture actuel : 38.2%</div><div class="notif-time">Il y a 2h</div></div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-body"><div class="notif-title">🎉 Devis #022 accepté — Lucas Bernard</div><div class="notif-desc">Contrat signé pour 3 600€. Onboarding à planifier.</div><div class="notif-time">Hier 11:20</div></div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-dot"></div>
+            <div class="notif-body"><div class="notif-title">🔐 Tentative de spam détectée</div><div class="notif-desc">14 soumissions suspectes sur le formulaire contact depuis l'IP 185.220.101.x</div><div class="notif-time">Auj. 07:12</div></div>
+            <button class="btn-danger" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="nav('moderation')">Voir</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PARAMÈTRES ══════ -->
+      <div class="view" id="view-parametres">
+        <div class="section-title">Paramètres</div>
+        <div class="grid-2">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-title">Informations générales</div>
+              <div class="af"><label>Nom de l'entreprise</label><input type="text" value="DIGIXPERTE"></div>
+              <div class="af"><label>Email de contact</label><input type="email" value="contact@digixperte.fr"></div>
+              <div class="af"><label>Téléphone</label><input type="tel" value="+33 6 00 00 00 00"></div>
+              <div class="af"><label>Adresse</label><input type="text" value="494 Rue Léon Blum, 34000 Montpellier"></div>
+              <button class="btn-pri" onclick="showToast('Informations sauvegardées','success')">Sauvegarder</button>
+            </div>
+            <div class="card">
+              <div class="card-title">Sécurité & Accès</div>
+              <div class="af"><label>Identifiant administrateur</label><input type="text" value="admin"></div>
+              <div class="af"><label>Nouveau mot de passe</label><input type="password" placeholder="••••••••"></div>
+              <div class="af"><label>Confirmer le mot de passe</label><input type="password" placeholder="••••••••"></div>
+              <button class="btn-pri" onclick="showToast('Mot de passe mis à jour','success')">Mettre à jour</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-title">Notifications</div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Nouveau lead reçu</span><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Audit en retard (+24h)</span><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Devis accepté / refusé</span><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Alerte sécurité</span><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px">Rapport hebdomadaire</span><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Entreprise partenaire</div>
+              <div class="af"><label>Nom de l'entreprise partenaire</label><input type="text" placeholder="Nom de votre entreprise d'accompagnement"></div>
+              <div class="af"><label>URL du site partenaire</label><input type="url" placeholder="https://www.votresite.fr"></div>
+              <button class="btn-pri" onclick="showToast('Lien partenaire mis à jour sur le site','success')">Mettre à jour sur le site</button>
+            </div>
+            <div class="card">
+              <div class="card-title">Données & RGPD</div>
+              <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px">Gérez la conservation des données personnelles conformément au RGPD.</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn-sec"><i data-lucide="download" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Exporter toutes les données</button>
+                <button class="btn-danger"><i data-lucide="trash-2" style="width:13px;height:13px;stroke:currentColor;fill:none"></i> Purger leads > 3 ans</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app -->
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-add-lead">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Ajouter un lead</h3>
+      <button class="btn-ghost" onclick="closeModal('modal-add-lead')"><i data-lucide="x" style="width:16px;height:16px;stroke:currentColor;fill:none"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2"><div class="af"><label>Prénom</label><input type="text" placeholder="Marie"></div><div class="af"><label>Nom</label><input type="text" placeholder="Dupont"></div></div>
+      <div class="af"><label>Email</label><input type="email" placeholder="marie@exemple.fr"></div>
+      <div class="af"><label>Téléphone</label><input type="tel" placeholder="+33 6 00 00 00 00"></div>
+      <div class="af"><label>Entreprise</label><input type="text" placeholder="Nom de la société"></div>
+      <div class="grid-2">
+        <div class="af"><label>Service souhaité</label><select><option>SEO</option><option>Google Ads</option><option>Meta Ads</option><option>Site web</option><option>Community Management</option><option>Branding</option><option>E-commerce</option></select></div>
+        <div class="af"><label>Statut</label><select><option>Nouveau</option><option>Contacté</option><option>Devis envoyé</option><option>Négociation</option><option>Signé</option><option>Perdu</option></select></div>
+      </div>
+      <div class="af"><label>Notes</label><textarea placeholder="Notes internes sur ce lead…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sec" onclick="closeModal('modal-add-lead')">Annuler</button>
+      <button class="btn-pri" onclick="closeModal('modal-add-lead');showToast('Lead ajouté avec succès','success')">Ajouter le lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toastWrap"></div>
+<script>
+// ═══════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════
+const SUPABASE_URL = 'https://kwigfkqrjpblrpveknnu.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3aWdma3FyanBibHJwdmVrbm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODI3MTQsImV4cCI6MjA4OTA1ODcxNH0.sxjjjlosrvbYkiIn7OoQ8KsuZKXnjKyl0KLpUjfCZA4';
+
+function loadSupabase() {
+  return new Promise(resolve => {
+    if (window._sb) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.onload = () => { window._sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); resolve(); };
+    document.head.appendChild(s);
+  });
+}
+
+// ═══════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════
+async function doLogin() {
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  if (u === 'admin' && p === 'digixperte2025') {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    await loadSupabase();
+    setTimeout(() => { initCharts(); loadDashboardKPIs(); renderLeadsTable(); setupRealtimeSubscriptions(); }, 300);
+    startRealtime();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+function doLogout() {
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+const viewTitles = { dashboard:'Tableau de bord', analytics:'Analytique temps réel', leads:'Leads', clients:'Clients', contacts:'Prises de contact', devis:'Devis', audits:'Demandes d\'audit', livraisons:'Livraisons', newsletter:'Newsletter', ressources:'Lead Magnets', moderation:'Modération', notifications:'Notifications', parametres:'Paramètres' };
+function nav(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const view = document.getElementById('view-' + id);
+  if (view) view.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  const btn = document.querySelector(`.sb-item[onclick*="'${id}'"]`);
+  if (btn) btn.classList.add('active');
+  document.getElementById('topbarTitle').textContent = viewTitles[id] || id;
+  document.getElementById('content').scrollTop = 0;
+  if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('collapsed');
+  const loaders = { dashboard:()=>loadDashboardKPIs(), leads:()=>renderLeadsTable(), contacts:()=>renderContactsTable(), audits:()=>renderAuditsTable(), livraisons:()=>renderLivraisonsTable(), newsletter:()=>{ renderNewsletterStats(); setTimeout(initNlCharts,50); }, ressources:()=>renderLeadMagnets(), analytics:()=>setTimeout(initAnalyticsCharts,50) };
+  if (loaders[id]) setTimeout(loaders[id], 80);
+}
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+function tabSwitch(el) { el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); }
+
+// ═══════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => { if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open'); });
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function showToast(message, type='success') {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const color = type==='success'?'var(--green)':'var(--red)';
+  const icon = type==='success'?'check-circle':'alert-circle';
+  t.innerHTML = `<i data-lucide="${icon}" style="width:16px;height:16px;stroke:${color};fill:none;flex-shrink:0"></i><span>${message}</span>`;
+  wrap.appendChild(t);
+  if (typeof lucide !== 'undefined') lucide.createIcons({nodes:[t]});
+  setTimeout(() => { t.style.animation='slideOut .25s ease forwards'; setTimeout(()=>t.remove(),260); }, 3500);
+}
+function refreshDash() { loadDashboardKPIs(); renderLeadsTable(); showToast('Actualisé','success'); }
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+const STATUT_BADGE = { nouveau:'badge-amber', contacte:'badge-blue', devis:'badge-cyan', negociation:'badge-purple', signe:'badge-green', perdu:'badge-red', non_traite:'badge-amber', en_cours:'badge-blue', traite:'badge-green', en_attente:'badge-amber', livre:'badge-green', annule:'badge-red', actif:'badge-green', inactif:'badge-red' };
+const STATUT_LABEL = { nouveau:'Nouveau', contacte:'Contacté', devis:'Devis', negociation:'Négociation', signe:'Signé ✓', perdu:'Perdu', non_traite:'Non traité', en_cours:'En cours', traite:'Traité ✓', en_attente:'En attente', livre:'Livré ✓', annule:'Annulé', actif:'Actif', inactif:'Inactif' };
+function statutBadge(s) { return `<span class="badge ${STATUT_BADGE[s]||'badge-gray'} badge-dot">${STATUT_LABEL[s]||s}</span>`; }
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d), now = new Date(), diff = Math.floor((now-dt)/86400000);
+  if (diff===0) return 'Auj. '+dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  if (diff===1) return 'Hier '+dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+function setText(id,val) { const el=document.getElementById(id); if(el) el.textContent=val; }
+
+// ═══════════════════════════════════════
+// DASHBOARD KPIs
+// ═══════════════════════════════════════
+async function loadDashboardKPIs() {
+  if (!window._sb) return;
+  try {
+    const [leadsR, clientsR, auditsR, contactsR, nlR, lmR] = await Promise.all([
+      _sb.from('leads').select('id,statut,created_at',{count:'exact'}),
+      _sb.from('clients').select('id,statut',{count:'exact'}),
+      _sb.from('audits').select('id,statut,created_at',{count:'exact'}),
+      _sb.from('contacts').select('id,statut',{count:'exact'}),
+      _sb.from('newsletter_abonnes').select('id',{count:'exact'}).eq('actif',true),
+      _sb.from('lead_magnets').select('id',{count:'exact'}),
+    ]);
+    const leads=leadsR.data||[], newLeads=leads.filter(l=>l.statut==='nouveau').length;
+    setText('kpi-leads', leads.length);
+    setText('kpi-leads-sub', `${newLeads} nouveau${newLeads!==1?'x':''} · ${leadsR.count||0} total`);
+    setText('badge-leads', newLeads);
+    const activeClients=(clientsR.data||[]).filter(c=>c.statut==='actif').length;
+    setText('kpi-clients', activeClients);
+    setText('kpi-clients-sub', `${clientsR.count||0} clients enregistrés`);
+    const audits=auditsR.data||[], pending=audits.filter(a=>a.statut==='en_attente').length;
+    const urgent=audits.filter(a=>a.statut==='en_attente'&&(Date.now()-new Date(a.created_at))>86400000).length;
+    setText('kpi-audits', pending);
+    setText('kpi-audits-sub', urgent?`⚠️ ${urgent} dépassent 24h`:'Tous dans les délais');
+    setText('badge-audits', pending);
+    const unhandled=(contactsR.data||[]).filter(c=>c.statut==='non_traite').length;
+    setText('badge-contacts', unhandled);
+    setText('kpi-newsletter', (nlR.count||0).toLocaleString('fr-FR'));
+    setText('kpi-newsletter-sub', `+${lmR.count||0} via lead magnet`);
+    setText('badge-notif', newLeads+unhandled+pending);
+    renderRecentLeads(leads.slice(-4).reverse());
+  } catch(e){ console.warn('KPI:', e); }
+}
+
+function renderRecentLeads(leads) {
+  const tbody = document.querySelector('#view-dashboard table tbody');
+  if (!tbody) return;
+  if (!leads.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">Aucun lead — les soumissions apparaîtront ici.</td></tr>'; return; }
+  const src = {audit_gratuit:'Audit',formulaire_contact:'Contact',lead_magnet:'Lead Magnet',site_web:'Site'};
+  tbody.innerHTML = leads.map(l=>`<tr><td><div class="td-name">${l.prenom||''} ${l.nom||''}</div><div class="td-sub">${l.email||''}</div></td><td><span class="chip">${src[l.source]||l.source||'—'}</span></td><td>${l.service?`<span class="badge badge-blue">${l.service.split(',')[0]}</span>`:'—'}</td><td>${statutBadge(l.statut)}</td><td class="td-sub">${fmtDate(l.created_at)}</td></tr>`).join('');
+}
+
+// ═══════════════════════════════════════
+// LEADS
+// ═══════════════════════════════════════
+async function renderLeadsTable() {
+  const tbody = document.getElementById('leads-table-body');
+  if (!tbody) return;
+  if (!window._sb) { setTimeout(renderLeadsTable,800); return; }
+  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text3)"><i data-lucide="loader" style="width:18px;height:18px;stroke:var(--blue2);fill:none;animation:spin 1s linear infinite;vertical-align:middle;margin-right:6px"></i>Chargement…</td></tr>`;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  const {data,error} = await _sb.from('leads').select('*').order('created_at',{ascending:false}).limit(100);
+  if (error||!data?.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:48px;color:var(--text3)"><i data-lucide="inbox" style="width:36px;height:36px;stroke:var(--text3);fill:none;display:block;margin:0 auto 12px;opacity:.4"></i>Aucun lead reçu — les soumissions des formulaires apparaîtront ici en temps réel.</td></tr>`;
+    if (typeof lucide !== 'undefined') lucide.createIcons(); return;
+  }
+  const src = {audit_gratuit:'Audit',formulaire_contact:'Contact',lead_magnet:'Lead Magnet',site_web:'Site'};
+  tbody.innerHTML = data.map(l=>`
+    <tr>
+      <td><input type="checkbox"></td>
+      <td><div class="td-name">${l.prenom||''} ${l.nom||''}</div><div class="td-sub">${l.email||''} ${l.telephone?'· '+l.telephone:''}</div></td>
+      <td><div style="font-size:12px;font-weight:600">${l.entreprise||'—'}</div><div class="td-sub">${l.ville||''}</div></td>
+      <td>${l.service?`<span class="badge badge-blue">${l.service.split(',')[0]}</span>`:'—'}</td>
+      <td><span class="chip">${src[l.source]||l.source||'—'}</span></td>
+      <td>${statutBadge(l.statut)}</td>
+      <td class="td-sub">${l.budget||'—'}</td>
+      <td class="td-sub">${fmtDate(l.created_at)}</td>
+      <td style="display:flex;gap:4px;align-items:center">
+        <button class="btn-ghost" onclick="openLeadDetail('${l.id}')">Voir</button>
+        <select style="font-size:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:4px 6px;cursor:pointer" onchange="updateLeadStatus('${l.id}',this.value);this.value=''">
+          <option value="">Statut…</option>
+          <option value="contacte">Contacté</option><option value="devis">Devis</option>
+          <option value="negociation">Négociation</option><option value="signe">Signé ✓</option><option value="perdu">Perdu</option>
+        </select>
+      </td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════
+// CONTACTS
+// ═══════════════════════════════════════
+async function renderContactsTable() {
+  const tbody = document.querySelector('#view-contacts table tbody');
+  if (!tbody||!window._sb) return;
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)"><i data-lucide="loader" style="width:16px;height:16px;stroke:var(--blue2);fill:none;animation:spin 1s linear infinite;vertical-align:middle"></i> Chargement…</td></tr>`;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  const {data} = await _sb.from('contacts').select('*').order('created_at',{ascending:false}).limit(50);
+  if (!data?.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)">Aucun message reçu.</td></tr>'; return; }
+  tbody.innerHTML = data.map(c=>`
+    <tr ${c.statut==='non_traite'?'style="background:rgba(99,102,241,.04)"':''}>
+      <td>${c.statut==='non_traite'?'<span class="rt-dot" style="display:inline-block"></span>':''}</td>
+      <td><div class="td-name">${c.prenom||''} ${c.nom||''}</div><div class="td-sub">${c.email||''}</div></td>
+      <td>${(c.sujets||[]).slice(0,2).map(s=>`<span class="badge badge-blue" style="margin:1px;font-size:10px">${s}</span>`).join('')||'—'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:12px">${(c.message||'').substring(0,70)}…</td>
+      <td>${statutBadge(c.statut)}</td>
+      <td class="td-sub">${fmtDate(c.created_at)}</td>
+      <td>${c.statut!=='traite'?`<button class="btn-pri" style="padding:5px 10px;font-size:11px" onclick="markContactDone('${c.id}',this)">Traiter</button>`:`<span class="badge badge-green">✓ Traité</span>`}</td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════
+// AUDITS
+// ═══════════════════════════════════════
+async function renderAuditsTable() {
+  const tbody = document.querySelector('#view-audits table tbody');
+  if (!tbody||!window._sb) return;
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)"><i data-lucide="loader" style="width:16px;height:16px;stroke:var(--blue2);fill:none;animation:spin 1s linear infinite;vertical-align:middle"></i> Chargement…</td></tr>`;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  const {data} = await _sb.from('audits').select('*').order('created_at',{ascending:false}).limit(50);
+  if (!data?.length) { tbody.innerHTML="<tr><td colspan='8' style='text-align:center;padding:40px;color:var(--text3)'>Aucune demande d'audit reçue.</td></tr>"; return; }
+  const prio = p=>({haute:'<span class="badge badge-red">🔴 Haute</span>',moyenne:'<span class="badge badge-amber">🟡 Moyenne</span>',normale:'<span class="badge badge-blue">🔵 Normale</span>'}[p]||'—');
+  tbody.innerHTML = data.map(a=>{
+    const urgent=a.statut==='en_attente'&&(Date.now()-new Date(a.created_at))>86400000;
+    const next=a.statut==='en_attente'?'Démarrer':a.statut==='en_cours'?'Marquer livré':null;
+    return `<tr ${urgent?'style="background:rgba(239,68,68,.04)"':''}>
+      <td><div class="td-name">${a.entreprise||'—'}</div><div class="td-sub">${a.site_web||''}</div></td>
+      <td><div class="td-name">${a.prenom||''} ${a.nom||''}</div><div class="td-sub">${a.email||''}</div></td>
+      <td>${a.site_web?`<a href="${a.site_web}" target="_blank" style="color:var(--blue2);font-size:12px">Voir ↗</a>`:'—'}</td>
+      <td>${(a.services_analyses||[]).slice(0,2).map(s=>`<span class="badge badge-blue" style="font-size:10px;margin:1px">${s.split(' ')[0]}</span>`).join('')||'—'}</td>
+      <td><span class="badge badge-${a.mode_livraison==='email'?'blue':'purple'}">${a.mode_livraison==='email_postal'?'Email+Postal':'Email'}</span></td>
+      <td>${prio(urgent?'haute':a.priorite)}</td>
+      <td>${statutBadge(a.statut)}</td>
+      <td>${next?`<button class="btn-pri" style="padding:5px 10px;font-size:11px" onclick="advanceAudit('${a.id}','${a.statut}',this)">${next}</button>`:`<span class="badge badge-green">✓</span>`}</td>
+    </tr>`;}).join('');
+}
+
+// ═══════════════════════════════════════
+// LIVRAISONS
+// ═══════════════════════════════════════
+async function renderLivraisonsTable() {
+  const tbody = document.querySelector('#view-livraisons table tbody');
+  if (!tbody||!window._sb) return;
+  const {data} = await _sb.from('audits').select('*').eq('statut','livre').order('date_livraison',{ascending:false}).limit(30);
+  if (!data?.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Aucune livraison effectuée.</td></tr>'; return; }
+  tbody.innerHTML = data.map(a=>`
+    <tr>
+      <td class="td-name">#${a.id.substring(0,6).toUpperCase()} — ${a.entreprise||'?'}</td>
+      <td class="td-sub">${a.email||'—'}</td>
+      <td><span class="badge badge-${a.mode_livraison==='email'?'blue':'purple'}">${a.mode_livraison==='email_postal'?'Email + Postal':'Email PDF'}</span></td>
+      <td class="td-sub">${fmtDate(a.date_livraison)}</td>
+      <td>${a.email_ouvert?'<span class="badge badge-green">Ouvert ✓</span>':'<span class="badge badge-amber">Non ouvert</span>'}</td>
+      <td>${a.feedback?'<span style="color:var(--amber)">'+'★'.repeat(a.feedback)+'☆'.repeat(5-a.feedback)+'</span>':'—'}</td>
+      <td><span class="badge badge-green badge-dot">Livré</span></td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════
+// NEWSLETTER
+// ═══════════════════════════════════════
+async function renderNewsletterStats() {
+  if (!window._sb) return;
+  const {count} = await _sb.from('newsletter_abonnes').select('id',{count:'exact'}).eq('actif',true);
+  const els = document.querySelectorAll('#view-newsletter .stat-val');
+  if (els[0]) els[0].textContent = (count||0).toLocaleString('fr-FR');
+}
+
+// ═══════════════════════════════════════
+// LEAD MAGNETS
+// ═══════════════════════════════════════
+async function renderLeadMagnets() {
+  if (!window._sb) return;
+  const {count} = await _sb.from('lead_magnets').select('id',{count:'exact'});
+  const statEls = document.querySelectorAll('#view-ressources .stat-val');
+  if (statEls[0]) statEls[0].textContent = count||0;
+  const {data} = await _sb.from('lead_magnets').select('*').order('created_at',{ascending:false}).limit(20);
+  const tbodies = document.querySelectorAll('#view-ressources table tbody');
+  const lastTbody = tbodies[tbodies.length-1];
+  if (!lastTbody) return;
+  if (!data?.length) { lastTbody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text3)">Aucun téléchargement.</td></tr>'; return; }
+  lastTbody.innerHTML = data.map(d=>`<tr><td class="td-sub">${d.email}</td><td class="td-sub">${d.ressource||'guide-pme'}</td><td class="td-sub">${fmtDate(d.created_at)}</td></tr>`).join('');
+}
+
+// ═══════════════════════════════════════
+// CRUD ACTIONS
+// ═══════════════════════════════════════
+async function updateLeadStatus(id,statut) {
+  if (!statut||!window._sb) return;
+  const {error} = await _sb.from('leads').update({statut,updated_at:new Date().toISOString()}).eq('id',id);
+  if (!error) { showToast(`Statut → ${STATUT_LABEL[statut]||statut}`,'success'); renderLeadsTable(); loadDashboardKPIs(); }
+  else showToast('Erreur de mise à jour','error');
+}
+async function markContactDone(id,btn) {
+  if (!window._sb) return;
+  await _sb.from('contacts').update({statut:'traite',updated_at:new Date().toISOString()}).eq('id',id);
+  btn.outerHTML='<span class="badge badge-green">✓ Traité</span>';
+  showToast('Contact traité ✓','success'); loadDashboardKPIs();
+}
+async function advanceAudit(id,currentStatut,btn) {
+  if (!window._sb) return;
+  const nextStatut = currentStatut==='en_attente'?'en_cours':'livre';
+  const update = {statut:nextStatut,updated_at:new Date().toISOString()};
+  if (nextStatut==='livre') update.date_livraison = new Date().toISOString();
+  await _sb.from('audits').update(update).eq('id',id);
+  showToast(`Audit → ${nextStatut==='en_cours'?'En cours':'Livré ✓'}`,'success');
+  renderAuditsTable(); loadDashboardKPIs();
+}
+async function openLeadDetail(id) {
+  if (!window._sb) return;
+  const {data} = await _sb.from('leads').select('*').eq('id',id).single();
+  if (!data) return;
+  document.querySelector('#modal-add-lead .modal-header h3').textContent = `Lead — ${data.prenom} ${data.nom}`;
+  const inputs = document.querySelectorAll('#modal-add-lead input[type="text"]');
+  if (inputs[0]) inputs[0].value=data.prenom||'';
+  if (inputs[1]) inputs[1].value=data.nom||'';
+  const em=document.querySelector('#modal-add-lead input[type="email"]'); if(em) em.value=data.email||'';
+  const tel=document.querySelector('#modal-add-lead input[type="tel"]'); if(tel) tel.value=data.telephone||'';
+  const note=document.querySelector('#modal-add-lead textarea'); if(note) note.value=data.notes||'';
+  openModal('modal-add-lead');
+}
+
+// ═══════════════════════════════════════
+// REAL-TIME
+// ═══════════════════════════════════════
+function setupRealtimeSubscriptions() {
+  if (!window._sb) return setTimeout(setupRealtimeSubscriptions,1500);
+  _sb.channel('admin-live')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'leads'},p=>{
+      showToast(`📬 Nouveau lead : ${p.new.prenom} ${p.new.nom}`,'success');
+      loadDashboardKPIs(); renderLeadsTable();
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'contacts'},p=>{
+      showToast(`💬 Nouveau message : ${p.new.prenom} ${p.new.nom}`,'success');
+      loadDashboardKPIs(); renderContactsTable();
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'audits'},p=>{
+      showToast(`🔍 Nouvel audit : ${p.new.entreprise}`,'success');
+      loadDashboardKPIs(); renderAuditsTable();
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'newsletter_abonnes'},p=>{
+      showToast(`📧 Nouvel abonné : ${p.new.email}`,'success');
+      renderNewsletterStats(); loadDashboardKPIs();
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'lead_magnets'},p=>{
+      showToast(`📥 Téléchargement : ${p.new.email}`,'success');
+      renderLeadMagnets();
+    })
+    .subscribe();
+}
+function startRealtime() {
+  const el=document.getElementById('rt-visitors');
+  setInterval(()=>{ if(el) el.textContent=Math.floor(200+Math.random()*100); },4000);
+}
+
+// ═══════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════
+const CD = { plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}}, scales:{ x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}, y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.06)'}} } };
+function initCharts() {
+  const rc=document.getElementById('revenueChart');
+  if(rc&&!rc._ci) rc._ci=new Chart(rc,{type:'bar',data:{labels:['Oct','Nov','Déc','Jan','Fév','Mar'],datasets:[{label:'CA (€)',data:[4200,5800,6100,7200,7800,8400],backgroundColor:'rgba(99,102,241,.7)',borderRadius:6,order:1},{label:'Leads',data:[22,28,31,35,42,47],type:'line',borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,.1)',tension:.4,pointBackgroundColor:'#a855f7',pointRadius:4,fill:true,yAxisID:'y1',order:0}]},options:{...CD,scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#475569',font:{size:10},callback:v=>v+'€'},grid:{color:'rgba(255,255,255,.06)'}},y1:{position:'right',ticks:{color:'#475569',font:{size:10}},grid:{display:false}}}}});
+  const nc=document.getElementById('nlChart');
+  if(nc&&!nc._ci) nc._ci=new Chart(nc,{type:'doughnut',data:{labels:['Ouverts','Non ouverts','Clics'],datasets:[{data:[323,419,105],backgroundColor:['#10b981','#1c1e27','#6366f1'],borderWidth:0,spacing:2}]},options:{plugins:{legend:{display:false}},cutout:'72%',responsive:true,maintainAspectRatio:false}});
+}
+function initAnalyticsCharts() {
+  const tc=document.getElementById('trafficChart');
+  if(tc&&!tc._ci){
+    const labels=Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);return d.getDate()+'/'+(d.getMonth()+1);});
+    tc._ci=new Chart(tc,{type:'line',data:{labels,datasets:[{label:'Sessions',data:Array.from({length:30},()=>Math.floor(800+Math.random()*600)),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',tension:.4,fill:true,pointRadius:2},{label:'Conversions',data:Array.from({length:30},()=>Math.floor(20+Math.random()*60)),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.05)',tension:.4,fill:true,pointRadius:2,yAxisID:'y1'}]},options:{...CD,scales:{x:{ticks:{color:'#475569',font:{size:9},maxTicksLimit:10},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.06)'}},y1:{position:'right',ticks:{color:'#475569',font:{size:10}},grid:{display:false}}}}});
+  }
+  const sc=document.getElementById('sourcesChart');
+  if(sc&&!sc._ci) sc._ci=new Chart(sc,{type:'doughnut',data:{labels:['Organique','Direct','Réseaux sociaux','Référents'],datasets:[{data:[48,22,18,12],backgroundColor:['#6366f1','#f59e0b','#a855f7','#06b6d4'],borderWidth:0,spacing:3}]},options:{plugins:{legend:{display:false}},cutout:'65%',responsive:true,maintainAspectRatio:false}});
+}
+function initNlCharts() {
+  const nc=document.getElementById('nlGrowthChart');
+  if(nc&&!nc._ci) nc._ci=new Chart(nc,{type:'line',data:{labels:['Oct','Nov','Déc','Jan','Fév','Mar'],datasets:[{label:'Abonnés',data:[540,610,680,740,815,847],borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.15)',tension:.4,fill:true,pointRadius:3}]},options:{...CD}});
+}
+
+document.addEventListener('DOMContentLoaded',()=>{ if(typeof lucide!=='undefined') lucide.createIcons(); });
+if(typeof lucide!=='undefined') lucide.createIcons();
+</script>
+</body>
+</html>
